@@ -1,0 +1,169 @@
+#include "stm32f407xx_gpio_driver.h"
+
+	void GPIO_PeriClockControl(Gpio_RegDef_t *pGPIOx, uint8_t EnorDi)
+	{
+	  if(EnorDi = ENABLE)
+	  {
+		if(pGPIOx == GPIOA)
+		{
+			GPIOA_PCLK_EN();
+		}
+		else if(pGPIOx == GPIOB)
+		{
+			GPIOB_PCLK_EN();
+		}
+		else if(pGPIOx == GPIOC)
+		{
+			GPIOC_PCLK_EN();
+		}
+		else if(pGPIOx == GPIOD)
+		{
+			GPIOD_PCLK_EN();
+		}
+	  }
+	  else
+	  {
+		  if(pGPIOx == GPIOA)
+		  		{
+		  			GPIOA_PCLK_DIS();
+		  		}
+		  		else if(pGPIOx == GPIOB)
+		  		{
+		  			GPIOB_PCLK_DIS();
+		  		}
+		  		else if(pGPIOx == GPIOC)
+		  		{
+		  			GPIOC_PCLK_DIS();
+		  		}
+		  		else if(pGPIOx == GPIOD)
+		  		{
+		  			GPIOD_PCLK_DIS();
+		  		}
+	  }
+	}
+
+	/*
+	 * //to do
+	 */
+	void GPIO_Init(GPIO_Handle_t *pGPIOHandle)
+	{
+		//1. Configure the Mode
+		uint32_t temp=0;
+
+		temp= (pGPIOHandle->GPIO_PinConfig.GPIO_PinMode<<(2*pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber));
+		pGPIOHandle ->pGPIOx->MODER &= ~(0x3<<(2*pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber)); //clear the bit position
+		pGPIOHandle ->pGPIOx->MODER |=temp; //set the value
+
+		//2. Configure the speed
+		temp = (pGPIOHandle->GPIO_PinConfig.GPIO_PinSpeed<<(2*pGPIOHandle->GPIO_PinConfig.GPIO_PinSpeed));
+		pGPIOHandle ->pGPIOx->OSPEEDR &=~(0x3<<(2*pGPIOHandle->GPIO_PinConfig.GPIO_PinSpeed)); //clear value
+		pGPIOHandle ->pGPIOx->OSPEEDR |= temp; //set value
+
+		//3. GPIO port Pull up or Pull down register
+		temp = (pGPIOHandle->GPIO_PinConfig.GPIO_PinPuPdControl<<(2*pGPIOHandle->GPIO_PinConfig.GPIO_PinPuPdControl));
+		pGPIOHandle ->pGPIOx->PUPDR &=~(0x3<<(2*pGPIOHandle->GPIO_PinConfig.GPIO_PinPuPdControl)); //clear value
+		pGPIOHandle ->pGPIOx->PUPDR |= temp; //set value
+
+		//4. GPIO port output type register
+		temp= (pGPIOHandle->GPIO_PinConfig.GPIO_PinOPType<<(pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber));
+		pGPIOHandle ->pGPIOx->OTYPER &= ~(0x1<<(pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber)); //clear the bit position
+		pGPIOHandle ->pGPIOx->OTYPER |=temp; //set the value
+
+		//5. GPIO alternate function register
+		if(pGPIOHandle->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_ALTFN)
+		{
+		uint8_t temp1, temp2;
+		temp1 = pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber/8;
+		temp2 = pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber%8;
+		pGPIOHandle->pGPIOx->AFR[temp1] &= ~(0xf<<(4* temp2));
+		pGPIOHandle->pGPIOx->AFR[temp1] |= (pGPIOHandle->GPIO_PinConfig.GPIO_PinAltFuncMode << (4* temp2));
+		}
+
+
+	}
+	void GPIO_DeInit(Gpio_RegDef_t *pGIOx)
+	{
+		if(pGIOx == GPIOA)
+				{
+					GPIOA_REG_RESET();
+				}
+		else if(pGIOx == GPIOB)
+				{
+					GPIOB_REG_RESET();
+				}
+		else if(pGIOx == GPIOC)
+				{
+					GPIOC_REG_RESET();
+				}
+		else if(pGIOx == GPIOD)
+				{
+					GPIOD_REG_RESET();
+				}
+		else if(pGIOx == GPIOE)
+				{
+					GPIOE_REG_RESET();
+				}
+		/*else if(pGIOx == GPIOF)
+				{
+					GPIOF_REG_RESET();
+				}
+		else if(pGIOx == GPIOG)
+				{
+					GPIOG_REG_RESET();
+				}
+		else if(pGIOx == GPIOH)
+				{
+					GPIOH_REG_RESET();
+				}
+		else if(pGIOx == GPIOI)
+				{
+					GPIOI_REG_RESET();
+				}*/
+
+	}
+	/*
+	 *  //to do
+	 */
+	uint8_t GPIO_ReadFromInputPin(Gpio_RegDef_t *pGIOx,  uint8_t PinNumber)
+	{
+		uint8_t value;
+
+		value = (uint8_t)((pGIOx->IDR >> PinNumber)& 0x00000001); //masking the IDR to Pin number so that we will always hit the first position
+		//value = (uint8_t)pGIOx->IDR;
+		return value;
+
+	}
+	uint16_t GPIO_ReadFromInputPort(Gpio_RegDef_t *pGIOx)
+	{
+		uint16_t value;
+		value = pGIOx->IDR;
+		return value;
+	}
+	/*
+	 *  //to do
+	 */
+	void GPIO_WriteToOutputPin(Gpio_RegDef_t *pGIOx, uint8_t PinNumber, uint8_t value)
+	{
+		if(value == GPIO_PIN_SET)
+		{
+			pGIOx->ODR |= (1<<PinNumber);
+		}
+		else
+		{
+			pGIOx->ODR &= ~(1<<PinNumber);
+		}
+
+	}
+	void GPIO_WriteToOutputPort(Gpio_RegDef_t *pGIOx, uint16_t value)
+	{
+		pGIOx->ODR = value;
+
+	}
+	/*
+	 *  //to do
+	 */
+	void ToggleOutputPin(Gpio_RegDef_t *pGIOx, uint8_t PinNumber)
+	{
+		pGIOx->ODR ^= (1<<PinNumber);
+
+	}
